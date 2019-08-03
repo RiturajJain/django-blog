@@ -1,7 +1,9 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.models import User
-from .models import Post
+from .models import Post, Comment
+from .forms import CommentOnPostForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
 def home(request):
@@ -31,8 +33,37 @@ class UserPostListView(ListView):
         user = get_object_or_404(User, username=self.kwargs['username'])
         return Post.objects.filter(author=user).order_by('-date_posted')
 
+# Using post_detail_view instead of this to add comments section
 class PostDetailView(DetailView):
     model = Post
+
+# Adding Comment section to the Post
+def post_detail_view(request, pk):
+
+    post = get_object_or_404(Post, id=pk)
+    comments = Comment.objects.filter(post=post)
+
+    if request.method == "POST":
+        form = CommentOnPostForm(request.POST)
+        if request.user.is_authenticated and form.is_valid():
+            form.instance.user = request.user
+            form.instance.post = post
+            form.save()
+
+        else:
+            messages.info(request, f'You are not logged in! Please login to comment')
+
+        return redirect('post-detail', pk=pk)
+
+    else:
+        form = CommentOnPostForm()
+
+    context = {
+        "object": post,
+        "comments": comments,
+        "form": form
+    }
+    return render(request, 'blog/post_detail.html', context)
 
 class PostCreateView(LoginRequiredMixin, CreateView):
     model = Post
