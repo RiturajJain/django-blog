@@ -87,7 +87,7 @@ def post_detail_view(request, pk):
         "comments": comments,
         "form": form
     }
-    print("Been to Ajax");
+    
     return render(request, 'blog/post_detail.html', context)
 
 class PostCreateView(LoginRequiredMixin, CreateView):
