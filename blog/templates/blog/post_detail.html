@@ -40,11 +40,56 @@
             <a class="mr-2" href="{% url 'user-posts' comment.user.username %}">{{ comment.user }}</a>
             <small class="text-muted">{{ comment.date_commented|date:"F d, Y" }}</small>
           </div>
-          
-          <p class="article-content">{{ comment.content }}</p>
+          {% if comment.user == user %}
+            <form method="POST"> {% csrf_token %}
+              <button id="update-btn" class="btn btn-outline-secondary btn-sm mt-1 mb-1" type="submit" name="edit" value="{{ comment.id }}">Update</button>
+              <button class="btn btn-outline-danger btn-sm mt-1 mb-1" type="submit" name="delete" value="{{ comment.id }}">Delete</button>
+            </form>
+          {% endif %}
+
+          <!-- Pop-up form for updating comments -->
+          <div class="bg-modal">
+            <div class="popup-form">
+              <form class="comment-update" method="POST"> {% csrf_token %}
+                <h3>Update your comment</h3>
+                <fieldset class="form-group">
+                  {{ form|crispy }}
+                </fieldset>
+                <div class="form-group">
+                  <button type="submit" class="btn btn-outline-info" name="update" value="{{ comment.id }}">Update Comment</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <p class="article-content comment-content">{{ comment.content }}</p>
         </div>
       </div>
     {% endfor %}
   </div>
 
 {% endblock content %}
+
+{% block jscript %}
+
+  <script type="text/javascript">
+    $("#update-btn").click(function(event) {
+      event.preventDefault();
+      var form = event.target.parentElement;
+      console.log(form);
+      $.ajax({
+        type: "POST",
+        url: window.location.pathname,
+        data: {
+          id: event.target["value"],
+          csrfmiddlewaretoken: form.elements.csrfmiddlewaretoken.value
+        },
+        success: function(){
+        }
+      });
+
+      document.querySelector('.bg-modal').style.display = "flex";
+    });
+  </script>
+
+{% endblock jscript %}

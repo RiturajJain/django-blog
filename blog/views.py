@@ -41,19 +41,43 @@ class PostDetailView(DetailView):
 def post_detail_view(request, pk):
 
     post = get_object_or_404(Post, id=pk)
-    comments = Comment.objects.filter(post=post)
+    comments = Comment.objects.filter(post=post).order_by('-date_commented')
 
     if request.method == "POST":
-        form = CommentOnPostForm(request.POST)
-        if request.user.is_authenticated and form.is_valid():
-            form.instance.user = request.user
-            form.instance.post = post
-            form.save()
 
+        # Update the comment
+        # if 'edit' in request.POST:
+        #     comment = Comment.objects.get(id=int(request.POST['edit']))
+        #     form = CommentOnPostForm(instance=comment)
+
+        if request.is_ajax():
+            comment = Comment.objects.get(id=int(request.POST["id"]))
+            form = CommentOnPostForm(instance=comment)
+
+        elif 'update' in request.POST:
+            comment = Comment.objects.get(id=int(request.POST['update']))
+            form = CommentOnPostForm(request.POST, instance=comment)
+            if request.user.is_authenticated and form.is_valid():
+                form.save()
+                form = CommentOnPostForm()
+
+        # Delete the comment
+        elif 'delete' in request.POST:
+            comment = Comment.objects.get(id=int(request.POST['delete']))
+            comment.delete()
+
+        # Add New Comment
         else:
-            messages.info(request, f'You are not logged in! Please login to comment')
+            form = CommentOnPostForm(request.POST)
+            if request.user.is_authenticated and form.is_valid():
+                form.instance.user = request.user
+                form.instance.post = post
+                form.save()
 
-        return redirect('post-detail', pk=pk)
+            else:
+                messages.info(request, f'You are not logged in! Please login to comment')
+
+            return redirect('post-detail', pk=pk)
 
     else:
         form = CommentOnPostForm()
@@ -63,6 +87,7 @@ def post_detail_view(request, pk):
         "comments": comments,
         "form": form
     }
+    print("Been to Ajax");
     return render(request, 'blog/post_detail.html', context)
 
 class PostCreateView(LoginRequiredMixin, CreateView):

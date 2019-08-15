@@ -9,7 +9,7 @@ class CommentOnPostForm(forms.ModelForm):
                                     attrs = {
                                         'placeholder': "Comment here",
                                         'class': "comment-form",
-                                        'rows': 3,
+                                        'rows': 4
                                         }
                                 )
                             )
